@@ -1,13 +1,13 @@
 # Websocket support
 [![pub package](https://img.shields.io/pub/v/web_socket_support.svg)](https://pub.dev/packages/web_socket_support) [![web_socket_support](https://github.com/sharpbitstudio/flutter-websocket-support-mobile-implementation/actions/workflows/master_build.yaml/badge.svg?branch=master)](https://github.com/sharpbitstudio/flutter-websocket-support-mobile-implementation/actions/workflows/master_build.yaml) [![codecov](https://codecov.io/gh/sharpbitstudio/flutter-websocket-support-mobile-implementation/branch/master/graph/badge.svg?token=UK2F6LLRRV)](https://codecov.io/gh/sharpbitstudio/flutter-websocket-support-mobile-implementation)
 
-A Flutter plugin for websockets on Android (currently). This plugin is based on okHttp (for Android platform).
+A Flutter plugin for websockets on iOS and Android. This plugin is based on Starscream (for iOS) and OkHttp (for Android) platforms.
 
 Plugin was created as an attempt to overcome shortcomings of Flutter standard WebSocket implementation (cookbook) like connection not staying open while screen is locked or the application is in background. This plugin solves these problems.
 
 ## Introduction
 
-**Websocket support** uses Platform Channel to expose Dart APIs that Flutter application can use to communicate with platform specific websocket native libraries. For andorid, chosen java Websocket implementation is [OkHttp](https://square.github.io/okhttp/).
+**Websocket support** uses Platform Channel to expose Dart APIs that Flutter application can use to communicate with platform specific websocket native libraries. For Android, the chosen WebSocket implementation is [OkHttp](https://square.github.io/okhttp/). For iOS, the chosen WebSocket implementation is [Starscream](https://github.com/daltoniam/Starscream).
 
 ## Example
 
@@ -23,7 +23,7 @@ final WebSocketClient _wsClient = WebSocketClient(DefaultWebSocketListener.forTe
         (msg) => print('Message received: $msg')));               // _onStringMessage callback
 // ...
 // connect to remote ws endpoint
-await _wsClient.connect('ws://echo.websocket.org', options: WebSocketOptions(autoReconnect: true);
+await _wsClient.connect('ws://echo.websocket.org', options: WebSocketOptions(autoReconnect: true));
 
 // ...
 // After connection is established, use obtained WebSocketConnection instance to send messages
@@ -41,8 +41,12 @@ or see [example](example/lib/main.dart) for more details.
 - Android SDK min version: 27
 - Android SDK target version: 34
 
-## TODO
-Unfortunately, iOS implementation is still missing. So, if you have know-how, and you're willing to implement it - you will be more than welcomed. Preffered WebSocket libs are [NWWebSocket](https://github.com/pusher/NWWebSocket) and [Starscream](https://github.com/daltoniam/Starscream), but we are opened for other options as well.
+## Features
+✅ **iOS Implementation**: Added Starscream-based WebSocket support for iOS
+✅ **Android Implementation**: Existing OkHttp-based WebSocket support for Android
+✅ **Cross-platform**: Consistent API across both iOS and Android
+✅ **Background Support**: WebSocket connections persist when app is in background
+✅ **Lock Screen Support**: Connections remain active when screen is locked
 
 ## Contributing
 See the Contributing guide for details on contributing to this project.

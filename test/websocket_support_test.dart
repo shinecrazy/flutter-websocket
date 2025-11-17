@@ -395,7 +395,7 @@ void main() {
       );
 
       // test on open
-      var wsConnection = MockWebSockerConnection();
+      var wsConnection = MockWebSocketConnection();
       listener.onWsOpened(wsConnection);
 
       // verify
@@ -481,7 +481,7 @@ void main() {
       );
 
       // test on open
-      var wsConnection = MockWebSockerConnection();
+      var wsConnection = MockWebSocketConnection();
       listener.onWsOpened(wsConnection);
 
       // verify
@@ -522,7 +522,7 @@ void main() {
       );
 
       // test on open
-      var wsConnection = MockWebSockerConnection();
+      var wsConnection = MockWebSocketConnection();
       listener.onWsOpened(wsConnection);
 
       // verify
@@ -567,7 +567,7 @@ class MockMethodChannel extends Mock implements MethodChannel {}
 
 class MockEventChannel extends Mock implements EventChannel {}
 
-class MockWebSockerConnection extends Mock implements WebSocketConnection {}
+class MockWebSocketConnection extends Mock implements WebSocketConnection {}
 
 class MockDummyWebSocketListener extends Mock
     implements DummyWebSocketListener {}
