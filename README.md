@@ -42,6 +42,7 @@ or see [example](example/lib/main.dart) for more details.
 - Android SDK target version: 34
 
 ## Features
+
 ✅ **iOS Implementation**: Added Starscream-based WebSocket support for iOS
 ✅ **Android Implementation**: Existing OkHttp-based WebSocket support for Android
 ✅ **Cross-platform**: Consistent API across both iOS and Android

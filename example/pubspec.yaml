@@ -1,5 +1,6 @@
 name: web_socket_support_example
 description: Demonstrates how to use the web_socket_support plugin.
+version: 1.0.0+1
 publish_to: none
 
 environment:

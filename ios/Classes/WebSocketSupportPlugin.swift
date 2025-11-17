@@ -4,6 +4,10 @@ import Starscream
 import Foundation
 
 @objc public class SwiftWebSocketSupportPlugin: NSObject, FlutterPlugin {
+    @objc static let methodChannelName = "tech.sharpbitstudio.web_socket_support/methods"
+    @objc static let textEventChannelName = "tech.sharpbitstudio.web_socket_support/text"
+    @objc static let byteEventChannelName = "tech.sharpbitstudio.web_socket_support/byte"
+
     private var webSocket: WebSocket?
     private var methodChannel: FlutterMethodChannel?
     private var textEventChannel: FlutterEventChannel?
@@ -12,11 +16,11 @@ import Foundation
     private var byteStreamHandler: WebSocketStreamHandler?
 
     @objc public static func register(with registrar: FlutterPluginRegistrar) {
-        let methodChannel = FlutterMethodChannel(name: "tech.sharpbitstudio.web_socket_support/methods", binaryMessenger: registrar.messenger())
-        let textEventChannel = FlutterEventChannel(name: "tech.sharpbitstudio.web_socket_support/text", binaryMessenger: registrar.messenger())
-        let byteEventChannel = FlutterEventChannel(name: "tech.sharpbitstudio.web_socket_support/byte", binaryMessenger: registrar.messenger())
+        let methodChannel = FlutterMethodChannel(name: methodChannelName, binaryMessenger: registrar.messenger())
+        let textEventChannel = FlutterEventChannel(name: textEventChannelName, binaryMessenger: registrar.messenger())
+        let byteEventChannel = FlutterEventChannel(name: byteEventChannelName, binaryMessenger: registrar.messenger())
 
-        let instance = WebSocketSupportPlugin()
+        let instance = SwiftWebSocketSupportPlugin()
         instance.methodChannel = methodChannel
         instance.textEventChannel = textEventChannel
         instance.byteEventChannel = byteEventChannel
@@ -33,7 +37,7 @@ import Foundation
         byteEventChannel.setStreamHandler(byteStreamHandler)
     }
 
-    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    @objc public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case "connect":
             connect(call: call, result: result)
@@ -63,14 +67,6 @@ import Foundation
             for (key, value) in headers {
                 request.setValue(value, forHTTPHeaderField: key)
             }
-        }
-
-        // Configure WebSocket options
-        if let options = args["options"] as? [String: Any],
-           let pingInterval = options["pingInterval"] as? Int64,
-           pingInterval > 0 {
-            // Starscream doesn't have direct ping interval setting in v4,
-            // but we can implement this with a timer if needed
         }
 
         // Create WebSocket instance
@@ -127,20 +123,17 @@ import Foundation
 }
 
 // MARK: - WebSocketDelegate
-extension WebSocketSupportPlugin: WebSocketDelegate {
-    public func didReceive(event: WebSocketEvent, client: WebSocket) {
+extension SwiftWebSocketSupportPlugin: WebSocketDelegate {
+    public func didReceive(event: WebSocketEvent, client: WebSocketClient) {
         switch event {
-        case .connected:
-            let connection = WebSocketConnection(webSocket: client, textStreamHandler: textStreamHandler, byteStreamHandler: byteStreamHandler)
+        case .connected(let headers):
+            let connection = WebSocketConnection(webSocket: client as? WebSocket, textStreamHandler: textStreamHandler, byteStreamHandler: byteStreamHandler)
             sendEventToFlutter(method: "onOpened", arguments: [:])
-
-            // Store the connection for sending messages
-            // Note: In a real implementation, you might want to manage multiple connections
 
         case .disconnected(let reason, let code):
             sendEventToFlutter(method: "onClosed", arguments: [
-                "code": code,
-                "reason": reason ?? "Unknown reason"
+                "code": Int(code),
+                "reason": reason
             ])
 
         case .text(let text):
@@ -150,16 +143,16 @@ extension WebSocketSupportPlugin: WebSocketDelegate {
             byteStreamHandler?.sendEvent(data)
 
         case .ping(_):
-            break // Ping received, Starscream handles pong automatically
+            break
 
         case .pong(_):
-            break // Pong received
+            break
 
         case .viabilityChanged(_):
-            break // Connection viability changed
+            break
 
         case .reconnectSuggested(_):
-            break // Reconnection suggested
+            break
 
         case .cancelled:
             sendEventToFlutter(method: "onClosed", arguments: [
@@ -167,9 +160,21 @@ extension WebSocketSupportPlugin: WebSocketDelegate {
                 "reason": "Connection cancelled"
             ])
 
+        case .peerClosed:
+            sendEventToFlutter(method: "onClosed", arguments: [
+                "code": 1000,
+                "reason": "Peer closed"
+            ])
+
         case .error(let error):
             let errorMessage = error?.localizedDescription ?? "Unknown error"
-            let errorType = type(of: error?.self)?.description() ?? "UnknownError"
+            let errorType: String
+
+            if let error = error {
+                errorType = String(describing: type(of: error))
+            } else {
+                errorType = "UnknownError"
+            }
 
             sendEventToFlutter(method: "onFailure", arguments: [
                 "throwableType": errorType,
@@ -188,27 +193,27 @@ extension WebSocketSupportPlugin: WebSocketDelegate {
 
 // MARK: - WebSocketConnection
 public class WebSocketConnection: NSObject {
-    private weak var webSocket: WebSocket?
+    private weak var webSocketClient: WebSocketClient?
     private weak var textStreamHandler: WebSocketStreamHandler?
     private weak var byteStreamHandler: WebSocketStreamHandler?
 
-    init(webSocket: WebSocket, textStreamHandler: WebSocketStreamHandler?, byteStreamHandler: WebSocketStreamHandler?) {
-        self.webSocket = webSocket
+    init(webSocket: WebSocket?, textStreamHandler: WebSocketStreamHandler?, byteStreamHandler: WebSocketStreamHandler?) {
+        self.webSocketClient = webSocket
         self.textStreamHandler = textStreamHandler
         self.byteStreamHandler = byteStreamHandler
         super.init()
     }
 
     public func sendTextMessage(_ message: String) {
-        webSocket?.write(string: message)
+        webSocketClient?.write(string: message, completion: nil)
     }
 
     public func sendByteMessage(_ data: Data) {
-        webSocket?.write(data: data)
+        webSocketClient?.write(data: data, completion: nil)
     }
 
     public func disconnect(code: Int = 1000, reason: String = "Client done.") {
-        webSocket?.disconnect()
+        webSocketClient?.disconnect(closeCode: UInt16(code))
     }
 }
 
@@ -240,18 +245,5 @@ public class WebSocketStreamHandler: NSObject, FlutterStreamHandler {
                 details: nil
             ))
         }
-    }
-}
-
-// MARK: - NSError description extension
-extension NSError: CustomStringConvertible {
-    public var description: String {
-        return self.localizedDescription
-    }
-}
-
-extension Optional where Wrapped: Error {
-    func description() -> String {
-        return self?.localizedDescription ?? "Unknown error"
     }
 }
