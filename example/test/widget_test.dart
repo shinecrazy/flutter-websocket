@@ -6,7 +6,18 @@ import 'package:web_socket_support_example/main.dart';
 
 class WebSocketSupportMock extends Mock
     with ChangeNotifier
-    implements WebSocketSupport {}
+    implements WebSocketSupport {
+  bool working = false;
+  bool connected = false;
+
+  @override
+  bool isConnected() => connected;
+
+  @override
+  void notifyListeners() {
+    super.notifyListeners();
+  }
+}
 
 void main() {
   Widget makeTargetWidgetTestable(
@@ -31,13 +42,12 @@ void main() {
     var mockedWs = WebSocketSupportMock(); // mocked websocket support
 
     // stubbing
-    var connected = false;
     when(mockedWs.isConnected()).thenAnswer((realInvocation) {
-      return connected;
+      return mockedWs.connected;
     });
     when(mockedWs.working).thenReturn(false);
     when(mockedWs.connect()).thenAnswer((realInvocation) {
-      connected = true;
+      mockedWs.connected = true;
       mockedWs.notifyListeners();
       return Future<void>.value(null);
     });
